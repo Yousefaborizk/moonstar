@@ -1,0 +1,168 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-body">
+        <h1 class="card-title">{{ warehouse.name }}</h1>
+        <p class="card-text"><strong>Address:</strong> {{ warehouse.address|linebreaks }}</p>
+        
+        <div class="d-flex flex-wrap gap-2 align-items-start">
+            <a href="{% url 'warehouse_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> Back to Warehouses
+            </a>
+
+            <a href="{% url 'warehouse_update' warehouse.id %}" class="btn btn-warning">
+                <i class="fas fa-edit me-1"></i> Edit Warehouse
+            </a>
+
+            <a href="{% url 'warehouseproduct_create' warehouse.id %}" class="btn btn-info">
+                <i class="fas fa-plus me-1"></i> Add Product
+            </a>
+            
+            <button id="export-btn" class="btn btn-success">
+                <i class="bi bi-download me-1"></i> Export Data
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex flex-column flex-md-row justify-content-between align-items-center">
+        <h3 class="mb-2 mb-md-0">Current Inventory</h3>
+        <div class="mt-2 mt-md-0">
+            <input type="text" id="inventory-search" class="form-control" placeholder="Search inventory...">
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table" id="inventory-table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th class="sortable" data-sort="quantity">Quantity <i class="bi bi-arrow-down-up"></i></th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in inventory %}
+                    <tr>
+                        <td><a href="{% url 'product_detail' item.product.id %}">{{ item.product.name }}</a></td>
+                        <td class="quantity">{{ item.quantity }}</td>
+                        <td>
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'warehouseproduct_update' item.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center">This warehouse has no products</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    // Search functionality
+    $('#inventory-search').on('keyup', function() {
+        const value = $(this).val().toLowerCase();
+        $('#inventory-table tbody tr').filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        });
+    });
+
+    // Sorting functionality
+    $('.sortable').click(function() {
+        const table = $(this).parents('table').eq(0);
+        const column = $(this).data('sort');
+        let rows = table.find('tbody > tr').toArray().sort(comparer($(this).index()));
+        this.asc = !this.asc;
+        
+        if (!this.asc) {
+            rows = rows.reverse();
+        }
+        
+        for (let i = 0; i < rows.length; i++) {
+            table.append(rows[i]);
+        }
+        
+        // Update sort indicators
+        $('.sortable i').removeClass('bi-arrow-up bi-arrow-down');
+        const icon = $(this).find('i');
+        icon.removeClass('bi-arrow-down-up');
+        icon.addClass(this.asc ? 'bi-arrow-up' : 'bi-arrow-down');
+    });
+
+    function comparer(index) {
+        return function(a, b) {
+            const valA = parseFloat($(a).children('td').eq(index).text().replace(/[^0-9.-]+/g, ''));
+            const valB = parseFloat($(b).children('td').eq(index).text().replace(/[^0-9.-]+/g, ''));
+            return valA - valB;
+        };
+    }
+
+    // Export button functionality
+    $('#export-btn').click(function() {
+        let csv = [];
+        const headers = [];
+        
+        $('#inventory-table thead th').each(function() {
+            headers.push($(this).text().trim());
+        });
+        csv.push(headers.join(','));
+        
+        $('#inventory-table tbody tr:visible').each(function() {
+            const row = [];
+            $(this).find('td').each(function() {
+                row.push($(this).text().trim().replace(/,/g, ';'));
+            });
+            csv.push(row.join(','));
+        });
+        
+        const csvContent = csv.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = '{{ warehouse.name }} Inventory.csv';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    });
+
+    // Highlight low stock items (less than 10)
+    $('.quantity').each(function() {
+        const quantity = parseInt($(this).text());
+        if (quantity < 10) {
+            $(this).closest('tr').addClass('table-warning');
+            $(this).html(`<span class="low-stock">${quantity}</span>`);
+        }
+    });
+});
+</script>
+
+<style>
+.low-stock {
+    color: #dc3545;
+    font-weight: bold;
+}
+.sortable {
+    cursor: pointer;
+}
+.sortable:hover {
+    background-color: #f8f9fa;
+}
+#inventory-search {
+    width: 250px;
+}
+</style>
+{% endblock %}

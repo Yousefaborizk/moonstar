@@ -1,0 +1,256 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit Invoice #{{ object.number }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h4>Edit Invoice #{{ object.number }}</h4>
+    </div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <!-- Main Form -->
+            <div class="mb-4">
+                <h5>Invoice Details</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.client.label_tag }}
+                            {{ form.client }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.status.label_tag }}
+                            {{ form.status }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.date_due.label_tag }}
+                            {{ form.date_due }}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            {{ form.assigned_to.label_tag }}
+                            {{ form.assigned_to }}
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            {{ form.tax_percentage.label_tag }}
+                            <div class="input-group">
+                                {{ form.tax_percentage }}
+                                <span class="input-group-text">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            {{ form.discount_amount.label_tag }}
+                            {{ form.discount_amount }}
+                        </div>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    {{ form.notes.label_tag }}
+                    {{ form.notes }}
+                </div>
+            </div>
+
+            <!-- Items Formset -->
+            <div class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Invoice Items</h5>
+                    <button type="button" id="add-item" class="btn btn-sm btn-outline-primary">Add Item</button>
+                </div>
+                {{ formset.management_form }}
+                <table class="table" id="items-table">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Product</th>
+                            <th>Unit Price</th>
+                            <th>Quantity</th>
+                            <th>Total</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="formset-body">
+                        {% for form in formset %}
+                        <tr class="formset-row">
+                            <td>{{ form.product }}</td>
+                            <td>{{ form.unit_price }}</td>
+                            <td>{{ form.quantity }}</td>
+                            <td class="item-total">
+                                {% if form.instance.pk %}
+                                    {{ form.instance.total|floatformat:2 }}
+                                {% else %}
+                                    0.00
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if not forloop.first %}
+                                <button type="button" class="btn btn-sm btn-outline-danger remove-row">Remove</button>
+                                {% endif %}
+                            </td>
+                            {% for hidden in form.hidden_fields %}
+                                {{ hidden }}
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Invoice Totals Section -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    <h5>Invoice Totals</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-md-6 text-end"><strong>Subtotal:</strong></div>
+                        <div class="col-md-6" id="subtotal-display">0.00</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-6 text-end">
+                            <strong>Tax (<span id="tax-percentage-display">0</span>%):</strong>
+                        </div>
+                        <div class="col-md-6" id="tax-amount-display">0.00</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-6 text-end"><strong>Discount:</strong></div>
+                        <div class="col-md-6" id="discount-display">0.00</div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-md-6 text-end"><strong>Grand Total:</strong></div>
+                        <div class="col-md-6" id="grand-total-display">0.00</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'invoice_detail' object.pk %}" class="btn btn-secondary">Cancel</a>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Initialize formset count
+    let formCount = parseInt($('#id_form-TOTAL_FORMS').val());
+    
+    // Calculate totals
+    function calculateTotals() {
+        let subtotal = 0;
+        
+        $('.formset-row').each(function() {
+            const unitPrice = parseFloat($(this).find('input[id*="-unit_price"]').val()) || 0;
+            const quantity = parseFloat($(this).find('input[id*="-quantity"]').val()) || 0;
+            const total = unitPrice * quantity;
+            
+            $(this).find('.item-total').text(total.toFixed(2));
+            subtotal += total;
+        });
+        
+        // Get other values
+        const taxPercentage = parseFloat($('#id_tax_percentage').val()) || 0;
+        const discountAmount = parseFloat($('#id_discount_amount').val()) || 0;
+        const taxAmount = subtotal * (taxPercentage / 100);
+        const grandTotal = (subtotal + taxAmount) - discountAmount;
+        
+        // Update display
+        $('#subtotal-display').text(subtotal.toFixed(2));
+        $('#tax-percentage-display').text(taxPercentage);
+        $('#tax-amount-display').text(taxAmount.toFixed(2));
+        $('#discount-display').text(discountAmount.toFixed(2));
+        $('#grand-total-display').text(grandTotal.toFixed(2));
+    }
+    
+    // Add new form row
+    $('#add-item').click(function() {
+        const newRow = $('.formset-row:first').clone();
+        const newIndex = formCount++;
+        
+        // Update all the names/ids in the new form
+        newRow.find(':input').each(function() {
+            const name = $(this).attr('name').replace(/-\d+-/, '-' + newIndex + '-');
+            const id = 'id_' + name;
+            $(this).attr({
+                'name': name,
+                'id': id
+            }).val('');
+        });
+        
+        // Clear values and add remove button
+        newRow.find('input').val('');
+        newRow.find('td:last').html('<button type="button" class="btn btn-sm btn-outline-danger remove-row">Remove</button>');
+        newRow.find('.item-total').text('0.00');
+        
+        // Add the new row
+        $('#formset-body').append(newRow);
+        
+        // Update the total form count
+        $('#id_form-TOTAL_FORMS').val(formCount);
+    });
+    
+    // Remove form row
+    $(document).on('click', '.remove-row', function() {
+        $(this).closest('tr').remove();
+        formCount--;
+        $('#id_form-TOTAL_FORMS').val(formCount);
+        
+        // Re-index remaining forms
+        $('.formset-row').each(function(i) {
+            $(this).find(':input').each(function() {
+                const name = $(this).attr('name').replace(/-\d+-/, '-' + i + '-');
+                const id = 'id_' + name;
+                $(this).attr({
+                    'name': name,
+                    'id': id
+                });
+            });
+        });
+        
+        calculateTotals();
+    });
+    
+    // Calculate totals on input change
+    $(document).on('input', 'input[id*="-unit_price"], input[id*="-quantity"], #id_tax_percentage, #id_discount_amount', calculateTotals);
+    
+    // Initial calculation
+    calculateTotals();
+});
+</script>
+
+<style>
+    #subtotal-display, 
+    #tax-amount-display, 
+    #discount-display, 
+    #grand-total-display {
+        font-weight: bold;
+    }
+    #grand-total-display {
+        font-size: 1.2em;
+        color: #0d6efd;
+    }
+    .card-header.bg-light h5 {
+        margin-bottom: 0;
+    }
+    .formset-row td {
+        vertical-align: middle;
+    }
+</style>
+{% endblock %}

@@ -1,0 +1,587 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Invoice #{{ invoice.number }}{% endblock %}
+
+{% block extra_css %}
+
+<style>
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        .invoice-print-area, .invoice-print-area * {
+            visibility: visible;
+        }
+        .invoice-print-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            margin: 0;
+            padding: 20px;
+        }
+        .no-print {
+            display: none !important;
+        }
+        .table {
+            border-collapse: collapse;
+        }
+        .table th, .table td {
+            border: 1px solid #dee2e6;
+        }
+        .badge {
+            border: 1px solid #000;
+            color: #000 !important;
+            background-color: transparent !important;
+        }
+        .text-danger {
+            color: #dc3545 !important;
+        }
+        .watermark {
+            display: none;
+        }
+    }
+    
+    .invoice-header {
+        border-bottom: 2px solid #dee2e6;
+        padding-bottom: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .invoice-table th {
+        background-color: #f8f9fa;
+    }
+    
+    .invoice-totals {
+        background-color: #f8f9fa;
+    }
+    
+    .watermark {
+        position: fixed;
+        opacity: 0.1;
+        font-size: 6rem;
+        width: 100%;
+        text-align: center;
+        z-index: 1000;
+        transform: rotate(-30deg);
+        top: 50%;
+        left: 0;
+    }
+    
+    .payment-progress {
+        height: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .installment-table tr.paid {
+        background-color: #e8f5e9;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    {% if invoice.status == 'paid' %}
+    <div class="watermark no-print">PAID</div>
+    {% elif invoice.status == 'draft' %}
+    <div class="watermark no-print">DRAFT</div>
+    {% elif invoice.status == 'installment' %}
+    <div class="watermark no-print">INSTALLMENT</div>
+    {% endif %}
+    
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center no-print">
+            <div>
+                <h4 class="mb-0">INVOICE #{{ invoice.number }}</h4>
+                <small class="opacity-75">Created: {{ invoice.date_created|date:"M d, Y" }}</small>
+            </div>
+            <div>
+                <span class="badge 
+                    {% if invoice.status == 'paid' %}bg-success
+                    {% elif invoice.status == 'sent' %}bg-primary
+                    {% elif invoice.status == 'draft' %}bg-secondary
+                    {% elif invoice.status == 'installment' %}bg-info
+                    {% else %}bg-warning{% endif %}">
+                    {{ invoice.get_status_display|upper }}
+                </span>
+            </div>
+        </div>
+        
+        <div class="card-body invoice-print-area">
+            <div class="row mb-4 invoice-header">
+                <div class="col-md-6">
+                    <div style="text-align: center;">
+                        <img src="{% static 'Final_logo_black.png' %}" alt="MoonStar Products" style="width: 450px; height: 50px;" />
+                    </div>
+                    <div class="mb-3 no-print">
+                        <img src="/static/logo.png" alt="Company Logo" class="img-fluid" style="max-height: 80px;">
+                    </div>
+                </div>
+
+                <div class="col-md-6 text-md-end">
+                    <h5>To:</h5>
+                    <address class="mb-0">
+                        <strong>{{ invoice.client.name }}</strong><br>
+                        Phone: {{ invoice.client.phone }}<br>
+                        {% if invoice.client.email %}{{ invoice.client.email }}<br>{% endif %}
+                        {% if invoice.client.address %}{{ invoice.client.address }}{% endif %}
+                    </address>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="d-flex flex-column">
+                        <p><strong>Date:</strong> {{ invoice.date_created|date:"F j, Y" }}</p>
+                        <p><strong>Due Date:</strong> {{ invoice.date_due|date:"F j, Y" }}</p>
+                        <p><strong>Assigned To:</strong> {{ invoice.assigned_to.get_full_name|default:"Not assigned" }}</p>
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    {% if invoice.is_installment %}
+                    <div class="alert alert-info">
+                        <strong>Payment Plan:</strong> {{ invoice.installment_count }} installments
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if invoice.is_installment %}
+            <!-- Payment Progress -->
+            <div class="mb-4">
+                <h5>Payment Progress</h5>
+                <div class="d-flex justify-content-between mb-1">
+                    <span>Paid: ${{ invoice.amount_paid|floatformat:2 }}</span>
+                    <span>Total: ${{ invoice.total|floatformat:2 }}</span>
+                </div>
+                <div class="progress payment-progress">
+                    <div class="progress-bar bg-success" 
+                         role="progressbar" 
+                         style="width: {{ invoice.payment_progress }}%" 
+                         aria-valuenow="{{ invoice.payment_progress }}" 
+                         aria-valuemin="0"  
+                         aria-valuemax="100">
+                        {{ invoice.payment_progress }}%
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Installment Plan Section -->
+            {% if invoice.is_installment and invoice.installments.exists %}
+            <div class="card mb-4 border">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Installment Plan</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table installment-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Due Date</th>
+                                    <th class="text-end">Amount</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Payment Date</th>
+                                    <th class="no-print">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for installment in invoice.installments.all %}
+                                <tr class="{% if installment.is_paid %}paid{% endif %}">
+                                    <td>{{ forloop.counter }}</td>
+                                    <td>{{ installment.due_date|date:"M d, Y" }}</td>
+                                    <td class="text-end">${{ installment.amount|floatformat:2 }}</td>
+                                    <td>
+                                        {% if installment.is_paid %}
+                                        <span class="badge bg-success">Paid</span>
+                                        {% else %}
+                                        <span class="badge bg-warning">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        {% if installment.payment_date %}
+                                        {{ installment.payment_date|date:"M d, Y" }}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td class="no-print">
+                                        {% if not installment.is_paid %}
+                                        <button class="btn btn-sm btn-success mark-installment-paid" 
+                                            data-installment-id="{{ installment.id }}">
+                                            <i class="fas fa-check-circle me-1"></i> Mark Paid
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Total:</strong></td>
+                                    <td class="text-end">${{ invoice.total|floatformat:2 }}</td>
+                                    <td colspan="3"></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Invoice Items -->
+            <div class="table-responsive mb-4">
+                <table class="table invoice-table">
+                <thead class="table-light">
+                    <tr>
+                        <th class="w-50">Item Description</th>
+                        <th class="text-end financial-column">Unit Price</th>
+                        <th class="text-center">Qty</th>
+                        <th class="text-end financial-column">Amount</th>
+                    </tr>
+                </thead>
+                    <tbody>
+                        {% for item in invoice.items.all %}
+                        <tr>
+                            <td>{{ item.product.name }}</td>
+                            <td class="text-end">${{ item.unit_price|floatformat:2 }}</td>
+                            <td class="text-center">{{ item.quantity }}</td>
+                            <td class="text-end">${{ item.total|floatformat:2 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="invoice-totals">
+                        <tr>
+                            <td colspan="3" class="text-end border-0"><strong>Subtotal:</strong></td>
+                            <td class="text-end border-0">${{ invoice.subtotal|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="text-end border-0"><strong>Tax ({{ invoice.tax_percentage }}%):</strong></td>
+                            <td class="text-end border-0">${{ invoice.tax_amount|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="text-end border-0"><strong>Discount:</strong></td>
+                            <td class="text-end border-0">- ${{ invoice.discount_amount|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="text-end border-top"><h5 class="mb-0">Total Due:</h5></td>
+                            <td class="text-end border-top"><h5 class="mb-0">${{ invoice.total|floatformat:2 }}</h5></td>
+                        </tr>
+                        {% if invoice.is_installment %}
+                        <tr>
+                            <td colspan="3" class="text-end"><strong>Amount Paid:</strong></td>
+                            <td class="text-end">${{ invoice.amount_paid|floatformat:2 }}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="text-end"><strong>Balance Due:</strong></td>
+                            <td class="text-end">${{ invoice.balance_due|floatformat:2 }}</td>
+                        </tr>
+                        {% endif %}
+                    </tfoot>
+                </table>
+            </div>
+
+            {% if invoice.notes %}
+            <div class="card mb-4 border">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Notes</h5>
+                </div>
+                <div class="card-body">
+                    {{ invoice.notes|linebreaks }}
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="mt-4 pt-3 border-top no-print">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <button class="btn btn-outline-secondary" onclick="history.back()">
+                            <i class="fas fa-arrow-left me-2"></i>Back
+                        </button>
+                    </div>
+                    <div>
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'invoice_update' invoice.pk %}" class="btn btn-primary">
+                                <i class="fas fa-edit me-2"></i>Edit
+                            </a>
+                            {% if invoice.status != 'paid' and invoice.status != 'cancelled' %}
+                            <button class="btn btn-success" id="mark-paid-btn" data-invoice-id="{{ invoice.pk }}">
+                                <i class="fas fa-check-circle me-2"></i>Mark Paid
+                            </button>
+                            {% endif %}
+                            <button class="btn btn-outline-danger" onclick="printInvoice()">
+                                <i class="fas fa-print me-2"></i>Print
+                            </button>
+                            <button class="btn btn-outline-info" onclick="printForWarehouse()">
+                                <i class="fas fa-print me-2"></i>اذن مخزن
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+   
+            <div class="mt-4 pt-3 text-center print-only" style="display: none;">
+                <p class="text-muted">Thank you for choosing Moonstar.</p>
+                <p class="text-muted small">
+                    <address class="mb-0">
+                        7 Gamal Abd-El Nasser St, Sharabia, Cairo<br>
+                        Phone: (+20) 010-26265026
+                    </address>
+                </p>
+            </div>
+
+
+
+
+
+
+
+<div class="col-md-6 text-end">
+  <p class="text-muted" style="font-size: 24px; font-weight: bold; font-family: 'Arial', sans-serif; direction: rtl;">توقيع المستلم :</p>
+  <p>----------------------------------</p>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+function printInvoice() {
+    // Store original display values
+    const originalDisplay = {};
+    document.querySelectorAll('.no-print').forEach(el => {
+        originalDisplay[el.id || el.className] = window.getComputedStyle(el).display;
+        el.style.display = 'none';
+    });
+    
+    // Hide client email and address
+    const clientInfo = document.querySelector('address.mb-0');
+    if (clientInfo) {
+        originalDisplay['client-info'] = clientInfo.innerHTML;
+        // Remove email and address lines while keeping name and phone
+        const lines = clientInfo.innerHTML.split('<br>');
+        const filteredLines = lines.filter(line => 
+            !line.includes('@') && 
+            !line.includes('Email:') && 
+            !line.includes('Address:') && 
+            !line.trim().startsWith('<strong>') === false
+        );
+        clientInfo.innerHTML = filteredLines.join('<br>');
+    }
+    
+    // Hide the authorized signature section
+    const signatureSection = document.querySelector('.text-end:has(.text-muted)');
+    if (signatureSection) {
+        originalDisplay['signature-section'] = window.getComputedStyle(signatureSection).display;
+        signatureSection.style.display = 'none';
+    }
+    
+    // Hide the installment plan section
+    const installmentSection = document.querySelector('.installment-table')?.closest('.card');
+    if (installmentSection) {
+        originalDisplay['installment-section'] = window.getComputedStyle(installmentSection).display;
+        installmentSection.style.display = 'none';
+    }
+    
+    // Hide payment progress section
+    const paymentProgress = document.querySelector('.payment-progress')?.closest('.mb-4');
+    if (paymentProgress) {
+        originalDisplay['payment-progress'] = window.getComputedStyle(paymentProgress).display;
+        paymentProgress.style.display = 'none';
+    }
+    
+    // Show print-only elements
+    document.querySelectorAll('.print-only').forEach(el => {
+        el.style.display = 'block';
+    });
+    
+    // Print only the invoice-print-area
+    const printContent = document.querySelector('.invoice-print-area').innerHTML;
+    const originalContent = document.body.innerHTML;
+    
+    document.body.innerHTML = printContent;
+    window.print();
+    document.body.innerHTML = originalContent;
+    
+    // Restore original display values
+    document.querySelectorAll('.no-print').forEach(el => {
+        el.style.display = originalDisplay[el.id || el.className];
+    });
+    
+    // Restore client info if it exists
+    if (clientInfo && originalDisplay['client-info']) {
+        clientInfo.innerHTML = originalDisplay['client-info'];
+    }
+    
+    // Restore signature section if it exists
+    if (signatureSection) {
+        signatureSection.style.display = originalDisplay['signature-section'];
+    }
+    
+    // Restore installment section if it exists
+    if (installmentSection) {
+        installmentSection.style.display = originalDisplay['installment-section'];
+    }
+    
+    // Restore payment progress if it exists
+    if (paymentProgress) {
+        paymentProgress.style.display = originalDisplay['payment-progress'];
+    }
+}
+
+function printForWarehouse() {
+    // Store original display values
+    const originalDisplay = {};
+    document.querySelectorAll('.no-print').forEach(el => {
+        originalDisplay[el.id || el.className] = window.getComputedStyle(el).display;
+        el.style.display = 'none';
+    });
+    
+    // Hide financial columns and sections
+    const financialElements = document.querySelectorAll(
+        '.text-end:not(.text-end:has(.text-muted)), .invoice-totals, .payment-progress, .installment-table'
+    );
+    const hiddenElements = [];
+    
+    financialElements.forEach(el => {
+        if (window.getComputedStyle(el).display !== 'none') {
+            hiddenElements.push(el);
+            el.style.display = 'none';
+        }
+    });
+    
+    // Show the authorized signature section
+    const signatureSection = document.querySelector('.text-end:has(.text-muted)');
+    if (signatureSection) {
+        signatureSection.style.display = 'block';
+    }
+    
+    // Get the print content
+    const printContent = document.querySelector('.invoice-print-area').innerHTML;
+    const originalContent = document.body.innerHTML;
+    
+    // Print only the invoice-print-area
+    document.body.innerHTML = printContent;
+    window.print();
+    document.body.innerHTML = originalContent;
+    
+    // Restore original display values
+    document.querySelectorAll('.no-print').forEach(el => {
+        el.style.display = originalDisplay[el.id || el.className];
+    });
+    
+    // Restore hidden financial elements
+    hiddenElements.forEach(el => {
+        el.style.display = '';
+    });
+}
+
+
+    // Mark invoice as paid
+    document.getElementById('mark-paid-btn')?.addEventListener('click', function() {
+        const invoiceId = this.getAttribute('data-invoice-id');
+        const btn = this;
+        
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing...';
+        
+        fetch(`/invoice/${invoiceId}/mark-paid/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                window.location.reload();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while marking the invoice as paid.');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check-circle me-2"></i>Mark Paid';
+        });
+    });
+
+    // Mark installment as paid
+    document.querySelectorAll('.mark-installment-paid').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const installmentId = this.getAttribute('data-installment-id');
+            const btn = this;
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Processing';
+            
+            fetch(`/invoices/installment/${installmentId}/mark-paid/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while marking the installment as paid.');
+            });
+        });
+    });
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+</script>
+{% endblock %}
+
+{% endblock %}

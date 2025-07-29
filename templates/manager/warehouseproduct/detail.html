@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1>{{ warehouse.name }}</h1>
+    <p>{{ warehouse.address }}</p>
+    
+    <div class="mb-4">
+        <a href="{% url 'warehouse_update' warehouse.id %}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> Edit Warehouse
+        </a>
+        <a href="{% url 'warehouseproduct_create' warehouse.id %}" class="btn btn-success">
+            <i class="fas fa-plus"></i> Add Product
+        </a>
+    </div>
+    
+    <h3>Current Inventory</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Quantity</th>
+                <th>Total Value</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in warehouse.warehouse_products.all %}
+            <tr>
+                <td>{{ item.product.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>${{ item.total_value|floatformat:2 }}</td>
+                <td>
+                    <a href="#" class="btn btn-sm btn-warning">Edit</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4">No inventory records</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <div class="mt-3">
+        <strong>Total Inventory Value:</strong> ${{ warehouse.total_inventory_value|floatformat:2 }}
+    </div>
+</div>
+{% endblock %}

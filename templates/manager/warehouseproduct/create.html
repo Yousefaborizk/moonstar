@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>
+        {% if warehouse %}
+            Add/Update Product in {{ warehouse.name }}
+        {% else %}
+            Add Product to Warehouse
+        {% endif %}
+    </h2>
+    
+    <div class="alert alert-info">
+        <strong>Note:</strong> If this product already exists in the warehouse, 
+        the new quantity will be added to the existing quantity.
+    </div>
+    
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Save
+        </button>
+        <a href="{% if warehouse %}{% url 'warehouse_detail' warehouse.id %}{% else %}{% url 'warehouse_list' %}{% endif %}" 
+           class="btn btn-secondary">
+            <i class="fas fa-times"></i> Cancel
+        </a>
+    </form>
+</div>
+{% endblock %}

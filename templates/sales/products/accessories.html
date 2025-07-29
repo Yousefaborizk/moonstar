@@ -1,0 +1,474 @@
+{% extends "base2.html" %}
+{% load static %}
+
+{% block title %}Products: Accessories{% endblock %}
+
+{% block head %}
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --primary-color:rgb(235, 25, 141);
+        --secondary-color: #00d2ff;
+        --dark-color: #2c3e50;
+        --light-color: #ecf0f1;
+        --shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        --transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: 'Montserrat', sans-serif;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        color: var(--dark-color);
+        min-height: 100vh;
+    }
+
+    h1 {
+        font-size: 2.8rem;
+        font-weight: 700;
+        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        text-align: center;
+        margin: 2.5rem 0;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .wrapper {
+        width: 90%;
+        margin: 0 auto;
+        max-width: 1400px;
+        padding: 1rem;
+    }
+
+   
+    .cols {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 2.5rem;
+        padding: 1rem;
+    }
+
+    .coll {
+        position: relative;
+        cursor: pointer;
+        perspective: 1000px;
+        height: 380px;
+    }
+
+    .container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        transition: var(--transition);
+        transform-style: preserve-3d;
+    }
+
+    .coll:hover .container {
+        transform: rotateY(180deg);
+    }
+  
+    .front,
+    .back {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: var(--shadow);
+        transition: var(--transition);
+    }
+
+    .front {
+        background-size: cover;
+        background-position: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        transform: rotateY(0deg);
+    }
+
+    .front::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to bottom, rgba(0,0,0,0) 0%, rgba(0,0,0,0.7) 100%);
+    }
+
+    .back {
+        background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+        transform: rotateY(180deg);
+        padding: 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .inner {
+        position: relative;
+        z-index: 2;
+        padding: 2rem;
+        color: white;
+        text-align: center;
+    }
+
+    .front .inner p {
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: white;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    }
+
+    .front .inner span {
+        font-size: 1rem;
+        color: rgba(255, 255, 255, 0.9);
+        display: block;
+        margin-bottom: 1rem;
+    }
+
+    .back .inner p {
+        font-size: 1rem;
+        line-height: 1.6;
+        color: white;
+        margin-bottom: 1.5rem;
+    }
+
+    .price-tag {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: rgba(255, 255, 255, 0.9);
+        color: var(--primary-color);
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-weight: 600;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .no-products {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 3rem;
+        font-size: 1.2rem;
+        color: #666;
+    }
+
+    .action-btn {
+        display: inline-block;
+        background: white;
+        color: var(--primary-color);
+        padding: 0.8rem 1.8rem;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: 600;
+        margin-top: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .action-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+
+    @media (max-width: 768px) {
+        h1 {
+            font-size: 2.2rem;
+        }
+        
+        .cols {
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .coll {
+            height: 340px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        h1 {
+            font-size: 1.8rem;
+            margin: 1.5rem 0;
+        }
+        
+        .cols {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    /* Price filter dropdown styles */
+    .price-filter {
+        position: relative;
+        display: inline-block;
+    }
+    
+    .price-filter-btn {
+        background: rgba(255,255,255,0.9);
+        color: var(--dark-color);
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 50px;
+        cursor: pointer;
+        font-weight: 600;
+        box-shadow: var(--shadow);
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .price-filter-btn:hover {
+        background: rgba(255,255,255,0.95);
+    }
+    
+    .price-filter-content {
+        display: none;
+        position: absolute;
+        background-color: white;
+        min-width: 160px;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        z-index: 1;
+        border-radius: 10px;
+        overflow: hidden;
+        right: 0;
+    }
+    
+    .price-filter-content a {
+        color: var(--dark-color);
+        padding: 12px 16px;
+        text-decoration: none;
+        display: block;
+        transition: background 0.3s;
+    }
+    
+    .price-filter-content a:hover {
+        background-color: #f1f1f1;
+    }
+    
+    .price-filter:hover .price-filter-content {
+        display: block;
+    }
+
+
+
+
+
+
+
+
+
+
+/* Base style */
+.sort-button-group {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap; /* So buttons wrap on narrow screens */
+}
+
+.sort-btn {
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 100;
+  box-shadow: var(--shadow);
+  transition: var(--transition);
+  font-size: 1rem;
+}
+
+/* Variants */
+.sort-btn.light {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--dark-color);
+}
+
+.sort-btn.primary {
+  background: var(--primary-color);
+  color: white;
+}
+
+/* Mobile-specific tweaks */
+@media (max-width: 768px) {
+  .sort-button-group {
+    gap: 0.8rem;
+  }
+  
+  .sort-btn {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Small phone tweaks */
+@media (max-width: 480px) {
+  .sort-button-group {
+    gap: 0.6rem;
+  }
+  
+  .sort-btn {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.8rem;
+  }
+}
+
+/* Extra small phone tweaks */
+@media (max-width: 360px) {
+  .sort-button-group {
+    gap: 0.5rem;
+  }
+  
+  .sort-btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+  }
+}
+
+
+</style>
+{% endblock %}
+
+{% block contenttt1 %}
+<div class="wrapper">
+    <h1>Accessories Products</h1>
+    
+    <!-- Search and Filter Controls (inline styles only) -->
+    <div style="display: flex; justify-content: space-between; margin-bottom: 2rem; gap: 1.5rem; flex-wrap: wrap;">
+        <div style="flex: 1; min-width: 250px;">
+            <input type="text" id="product-search" placeholder="Search products..." 
+                   style="width: 100%; padding: 0.8rem 1.5rem; border: none; border-radius: 50px; background: rgba(255,255,255,0.9); box-shadow: var(--shadow); font-family: 'Montserrat', sans-serif; transition: var(--transition);"
+                   oninput="filterProducts()">
+        </div>
+<div class="sort-button-group">
+  <button onclick="sortProducts('date')" class="sort-btn light">New Arrivals</button>
+  <button onclick="sortProductsByPrice(event, 'high-to-low')" class="sort-btn primary">All Products</button>
+</div>
+
+    </div>
+
+    <div class="cols" id="products-container">
+        {% for x in product %}
+            {% if x.category == "Accessories" %}
+                <div class="coll" 
+                     data-name="{{ x.name|lower }}" 
+                     data-views="{{ x.view_count|default:0 }}" 
+                     data-date="{{ x.created_at|date:'U' }}"
+                     data-price="{{ x.price|default:0 }}">
+                    <div class="container">
+                        <div class="front" style="background-image: url('{% if x.main_image %}{{ x.main_image.url }}{% else %}{% static 'images/placeholder.png' %}{% endif %}')">
+                            <div class="price-tag">{{ x.category }}</div>
+                            <div class="inner">
+                                <p>{{ x.name|default:"Product Name" }}</p>
+                                <span>{{ x.short_description|default:"Click To Know More." }}</span>
+                            </div>
+                        </div>
+                        <div class="back">
+                            <div class="inner">
+                                {% comment %} <p>{{ x.details|default:"No detailed description provided." }}</p> {% endcomment %}
+
+                                <form action="{% url 'product_details_copy' x.id %}" method="get" style="display: inline;">
+                                    <button type="submit" class="action-btn">Know More</button>
+                                </form>                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        {% empty %}
+            <div class="no-products">
+                <p>No Accessories Products Available</p>
+                <a href="{% url 'All_products' %}" class="action-btn">Browse Other Products</a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+// Auto-sort products by price (high-to-low) on page load
+window.addEventListener('DOMContentLoaded', () => {
+    sortProductsByPrice(null, 'high-to-low');
+});
+
+// Product filtering function
+function filterProducts() {
+    const searchTerm = document.getElementById('product-search').value.toLowerCase();
+    const products = document.querySelectorAll('.coll');
+
+    products.forEach(product => {
+        const productName = product.getAttribute('data-name');
+        product.style.display = productName.includes(searchTerm) ? "block" : "none";
+    });
+}
+
+// Product sorting function (by date or views)
+function sortProducts(criteria) {
+    const container = document.getElementById('products-container');
+    const products = Array.from(container.querySelectorAll('.coll'));
+    const buttons = document.querySelectorAll('.sort-btn');
+
+    // Update active button state
+    buttons.forEach(btn => {
+        const isActive = btn === event.target;
+        btn.dataset.active = isActive;
+        btn.style.background = isActive ? 'var(--primary-color)' : 'rgba(255,255,255,0.9)';
+        btn.style.color = isActive ? 'white' : 'var(--dark-color)';
+    });
+
+    // Sort logic
+    products.sort((a, b) => {
+        if (criteria === 'date') {
+            return parseInt(b.getAttribute('data-date')) - parseInt(a.getAttribute('data-date'));
+        } else if (criteria === 'views') {
+            return parseInt(b.getAttribute('data-views')) - parseInt(a.getAttribute('data-views'));
+        }
+        return 0;
+    });
+
+    // Reattach sorted products
+    products.forEach(product => container.appendChild(product));
+}
+
+// Price sorting function (manual or automatic)
+function sortProductsByPrice(event = null, order = 'high-to-low') {
+    if (event) event.preventDefault();
+
+    const container = document.getElementById('products-container');
+    const products = Array.from(container.querySelectorAll('.coll'));
+
+    products.sort((a, b) => {
+        const priceA = parseFloat(a.getAttribute('data-price')) || 0;
+        const priceB = parseFloat(b.getAttribute('data-price')) || 0;
+        return order === 'high-to-low' ? priceB - priceA : priceA - priceB;
+    });
+
+    products.forEach(product => container.appendChild(product));
+
+    // Highlight selected filter if triggered by UI
+    if (event) {
+        const links = document.querySelectorAll('.price-filter-content a');
+        links.forEach(link => link.classList.remove('active'));
+        event.target.classList.add('active');
+
+        // Close dropdown
+        const dropdown = document.querySelector('.price-filter-content');
+        dropdown.style.display = 'none';
+    }
+}
+
+
+</script>
+{% endblock %}
+
+{% block body %}{% endblock %}

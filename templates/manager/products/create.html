@@ -1,0 +1,128 @@
+<!-- templates/products/create.html -->
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<h1 class="mb-4">Create Product</h1>
+
+<form method="post" enctype="multipart/form-data" id="product-form">
+    {% csrf_token %}
+    
+    <div class="card mb-4">
+        <div class="card-header">Basic Information</div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.name.label_tag }}
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="text-danger">{{ form.name.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.category.label_tag }}
+                        {{ form.category }}
+                        {% if form.category.errors %}
+                            <div class="text-danger">{{ form.category.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.price.label_tag }}
+                        {{ form.price }}
+                        {% if form.price.errors %}
+                            <div class="text-danger">{{ form.price.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        {{ form.details.label_tag }}
+                        {{ form.details }}
+                        {% if form.details.errors %}
+                            <div class="text-danger">{{ form.details.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.main_image.label_tag }}
+                        {{ form.main_image }}
+                        {% if form.main_image.errors %}
+                            <div class="text-danger">{{ form.main_image.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        {{ form.video.label_tag }}
+                        {{ form.video }}
+                        {% if form.video.errors %}
+                            <div class="text-danger">{{ form.video.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Product Images</span>
+            <button type="button" class="btn btn-sm btn-success" id="add-image-btn">
+                <i class="bi bi-plus"></i> Add Another Image
+            </button>
+        </div>
+        <div class="card-body">
+            {{ image_formset.management_form }}
+            <div id="image-forms-container">
+                {% for form in image_formset %}
+                <div class="image-form mb-3 p-3 border rounded">
+                    {{ form.as_p }}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save Product</button>
+    <a href="{% url 'product_list' %}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+$(document).ready(function() {
+    // Add new image field
+    $('#add-image-btn').click(function() {
+        $.ajax({
+            url: "{% url 'add_image_field' %}",
+            type: 'GET',
+            success: function(data) {
+                // Create new form element
+                const newForm = $('<div class="image-form mb-3 p-3 border rounded"></div>');
+                newForm.html(data.form_html);
+                
+                // Update form index
+                const totalForms = $('#id_images-TOTAL_FORMS');
+                const formIdx = parseInt(totalForms.val());
+                newForm.html(newForm.html().replace(/__prefix__/g, formIdx));
+                totalForms.val(formIdx + 1);
+                
+                // Add delete button
+                const deleteBtn = $('<button type="button" class="btn btn-sm btn-danger mt-2">Remove</button>');
+                deleteBtn.click(function() {
+                    newForm.remove();
+                });
+                newForm.append(deleteBtn);
+                
+                // Add to container
+                $('#image-forms-container').append(newForm);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

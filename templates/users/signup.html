@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Signup</title>
+    {% load static %}
+    <style>
+        body {
+            background-image: url('{% static "sign.jpg" %}');
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-attachment: fixed;
+            font-family: "Raleway", "Open Sans", "Droid Sans", "Roboto", arial, sans-serif;
+        }
+        .blurred-bg {
+            background-image: url('{% static "sign.jpg" %}');
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-attachment: fixed;
+        }
+        .blurred-bg.tinted {
+            background-image: linear-gradient(0deg, rgba(255, 90, 90, 0.2), rgba(86, 97, 255, 0.2)), url('{% static "sign.jpg" %}');
+        }
+        .blurred-bg.shaded {
+            background-image: linear-gradient(0deg, rgba(0,0,0,0.2), rgba(0,0,0,0.2)), url('{% static "sign.jpg" %}');
+        }
+        .box {
+            width: 390px;
+            height: 300px;
+            left: -webkit-calc(51.5% - 250px);
+            top: 30%;
+            position: absolute;
+            border-radius: 5px;
+            box-shadow: 0 20px 30px rgba(0,0,0,0.6);
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 20px;
+            text-align: center;
+            text-shadow: 0 1px 1px rgba(0,0,0,0.4);
+            display: flex;
+            transition: box-shadow 0.3s ease;
+        }
+        .box:hover {
+            cursor: move;
+        }
+        .box:hover {
+            box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+        }
+        .content {
+            margin: auto;
+        }
+        h1,
+        h2,
+        a,
+        p {
+            color: rgb(0, 0, 0);
+        }
+        h1,
+        h2,
+        a,
+        p.tinted {
+            color: black;
+        }
+        h2 {
+            font-size: 14px;
+        }
+        p.related {
+            text-transform: uppercase;
+        }
+        .js-tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .js-tooltip .tooltiptext {
+            visibility: hidden;
+            width: 120px;
+            background-color: black;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 16px;
+            position: absolute;
+            z-index: 1;
+        }
+        .js-tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: black transparent transparent transparent;
+        }
+        .js-tooltip:hover .tooltiptext {
+            visibility: visible;
+        }
+    </style>
+</head>
+<body>
+    <div id="box1" class="box blurred-bg tinted">
+        <div class="content">
+            <h1>Login Form</h1>
+
+
+
+
+
+            <h2>Register</h2>
+            <!-- <form method="post">
+                {% csrf_token %}
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+                <label for="password1">Password</label>
+                <input type="password" id="password1" name="password1" required>
+                <label for="password2">Confirm Password</label>
+                <input type="password" id="password2" name="password2" required>
+                <button type="submit">Register</button>
+            </form>
+            <div class="messages">
+                {% for message in messages %}
+                <p>{{message}}</p>
+                {% endfor %}
+            </div> -->
+
+
+
+
+
+            <form method="POST" action="{% url 'signup' %}">
+                {% csrf_token %}
+                <!-- {{ form.as_p }} -->
+
+                <div class="form-group">
+                    <label for="{{ form.username.id_for_label }}">Username:</label>
+                    <input type="text" name="{{ form.username.name }}" class="form-control" value="{{ form.username.value }}" >
+                    <span class="text-danger"> {{ form.username.errors }} </span>
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.password1.id_for_label }}">password1:</label>
+                    <input type="password" name="{{ form.password1.name }}" class="form-control" value="{{ form.password1.value }}" >
+                    <span class="text-danger"> {{ form.password1.errors }} </span>
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.password2.id_for_label }}">password2:</label>
+                    <input type="password" name="{{ form.password2.name }}" class="form-control" value="{{ form.password2.value }}" >
+                    <span class="text-danger"> {{ form.password2.errors }} </span>
+                </div>
+
+                <button type="submit" class="btn btn-dark"> 
+                    Submit
+                </button>
+
+            </form>
+
+
+
+
+
+
+            <h2>By <a href="" rel="follow" target="_blank">ABORIZK, MAMDOH</a></h2>
+            <p class="related">Forgrt Password: <a href="" target="_blank">From Here</a></p>  
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <script>
+        $(function() {
+            $( ".box" ).draggable();
+        });
+
+
+
+    //     var password1 = document.getElementById("password1");
+    // var password2 = document.getElementById("password2");
+    
+    // function validatePassword() {
+    //     if(password1.value != password2.value) {
+    //         alert("Passwords don't match");
+    //         return false;
+    //     }
+    //     return true;
+    // }
+    
+    // password2.addEventListener("input", validatePassword);
+    </script>
+
+
+</body>
+</html>

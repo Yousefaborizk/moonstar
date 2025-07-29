@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Update Product</h2>
+<form method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+    {{ form.as_p }}
+    
+    <h3>Images</h3>
+    {{ image_formset.management_form }}
+    {% for form in image_formset %}
+        <div class="image-form">
+            {{ form.as_p }}
+            {% if form.instance.image %}
+                <img src="{{ form.instance.image.url }}" height="100">
+            {% endif %}
+        </div>
+    {% endfor %}
+    
+    <button type="submit" class="btn btn-primary">Update</button>
+</form>
+{% endblock %}

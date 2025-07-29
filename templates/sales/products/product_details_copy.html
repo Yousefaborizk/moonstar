@@ -1,0 +1,949 @@
+{% extends "base2.html" %}
+{% load static %}
+
+{% block title %}Product Details: {{ product.name }}{% endblock %}
+
+{% block head %}
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+    :root {
+        --primary-color: rgb(235, 25, 141);
+        --secondary-color: #00d2ff;
+        --light-bg: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        --text-color: #2c3e50;
+        --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+        --shadow-md: 0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08);
+        --shadow-lg: 0 10px 20px rgba(0,0,0,0.1), 0 6px 6px rgba(0,0,0,0.1);
+        --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+
+    body {
+        font-family: 'Montserrat', sans-serif;
+        background: var(--light-bg);
+        color: var(--text-color);
+        line-height: 1.6;
+    }
+
+    .product-detail-container {
+        max-width: 1300px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 15px;
+        box-shadow: var(--shadow-lg);
+        transition: var(--transition);
+    }
+
+    .product-header {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 2rem;
+    }
+
+    .product-gallery {
+        flex: 1;
+        min-width: 300px;
+        position: relative;
+    }
+
+    .main-image-container {
+        position: relative;
+        overflow: hidden;
+        border-radius: 10px;
+        box-shadow: var(--shadow-md);
+        transition: var(--transition);
+    }
+
+    .main-image-container img {
+        width: 100%;
+        height: 400px;
+        object-fit: contain;
+        border-radius: 10px;
+        cursor: zoom-in;
+        transition: transform 0.5s ease;
+    }
+
+    .main-image-container:hover img {
+        transform: scale(1.02);
+    }
+
+    .thumbnail-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 1.5rem;
+    }
+
+    .thumbnail-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+
+    .thumbnail-image {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 5px;
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: var(--transition);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .thumbnail-image:hover {
+        transform: scale(1.1);
+        border-color: rgba(235, 25, 141, 0.5);
+        box-shadow: var(--shadow-md);
+    }
+
+    .thumbnail-image.active {
+        border-color: var(--primary-color);
+        transform: scale(1.1);
+    }
+
+    .thumbnail-zoom {
+        position: absolute;
+        width: 300px;
+        height: 300px;
+        overflow: hidden;
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        z-index: 100;
+        opacity: 0;
+        visibility: hidden;
+        background: white;
+        border: 3px solid white;
+        left: 50%;
+        transform: translateX(-50%) translateY(10px);
+        bottom: calc(100% + 15px);
+        transition: all 0.3s ease;
+    }
+
+    .thumbnail-zoom img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .thumbnail-wrapper:hover .thumbnail-zoom {
+        opacity: 1;
+        visibility: visible;
+        transform: translateX(-50%) translateY(0);
+    }
+
+    .product-info {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .product-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        line-height: 1.2;
+    }
+
+    .product-meta {
+        margin: 1.5rem 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        transition: var(--transition);
+    }
+
+    .badge i {
+        margin-right: 5px;
+    }
+
+    .category-badge {
+        background-color: rgba(235, 25, 141, 0.1);
+        color: var(--primary-color);
+    }
+
+    .stock-badge {
+        background-color: rgba(0, 210, 255, 0.1);
+        color: var(--secondary-color);
+    }
+
+    .product-details {
+        margin-top: 1.5rem;
+        padding: 1.25rem;
+        background: rgba(255, 0, 179, 0.05);
+        border-left: 4px solid rgb(198, 12, 185);
+        border-radius: 8px;
+        transition: var(--transition);
+    }
+
+    .product-details:hover {
+        background: rgba(255, 0, 179, 0.08);
+        transform: translateY(-2px);
+    }
+
+    .product-details h3 {
+        margin-top: 0;
+        margin-bottom: 0.75rem;
+        color: var(--primary-color);
+    }
+
+    .product-details p {
+        color: var(--primary-color);
+    }
+
+    .video-section {
+        margin-top: 2rem;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: var(--shadow-md);
+        transition: var(--transition);
+    }
+
+    .video-section:hover {
+        transform: translateY(-3px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .video-section video {
+        width: 100%;
+        display: block;
+    }
+
+    .action-buttons {
+        margin-top: 2.5rem;
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 0.85rem 1.75rem;
+        border-radius: 50px;
+        font-weight: 600;
+        text-decoration: none;
+        color: white;
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+        border: none;
+        cursor: pointer;
+        transition: var(--transition);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow-sm);
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+    }
+
+    .btn:active {
+        transform: translateY(0);
+    }
+
+    .btn i {
+        margin-right: 8px;
+    }
+
+    /* Modal */
+    .image-modal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.95);
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .image-modal.show {
+        display: flex;
+        opacity: 1;
+    }
+
+    .image-modal-content {
+        position: relative;
+        max-width: 90%;
+        max-height: 90%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .image-modal img {
+        max-width: 100%;
+        max-height: 90vh;
+        object-fit: contain;
+        animation: zoomIn 0.3s ease;
+    }
+
+    .close-modal {
+        position: absolute;
+        top: 25px;
+        right: 35px;
+        color: white;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .close-modal:hover {
+        color: var(--primary-color);
+        transform: rotate(90deg);
+    }
+
+    @keyframes zoomIn {
+        from { transform: scale(0.9); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .product-header {
+            flex-direction: column;
+        }
+        
+        .product-title {
+            font-size: 2rem;
+        }
+        
+        .thumbnail-zoom {
+            width: 200px;
+            height: 200px;
+        }
+        
+        .action-buttons {
+            justify-content: center;
+        }
+    }
+
+        /* Responsive adjustments */
+    @media (max-width: 468px) {
+        .product-header {
+            flex-direction: column;
+        }
+        
+        .product-title {
+            font-size: 1rem;
+        }
+        
+        .thumbnail-zoom {
+            width: 100px;
+            height: 100px;
+        }
+        
+        .action-buttons {
+            justify-content: center;
+        }
+    }
+
+
+
+            /* Responsive adjustments */
+    @media (max-width: 300px) {
+        .product-header {
+            flex-direction: column;
+        }
+        
+        .product-title {
+            font-size: 0.1rem;
+        }
+        
+        .thumbnail-zoom {
+            width: 10px;
+            height: 10px;
+        }
+        
+        .action-buttons {
+            justify-content: center;
+        }
+    }
+
+
+
+
+
+            /* Responsive adjustments */
+    @media (max-width: 200px) {
+        .product-header {
+            flex-direction: column;
+        }
+        
+        .product-title {
+            font-size: 0px;
+        }
+        
+        .thumbnail-zoom {
+            width: 10px;
+            height: 10px;
+        }
+        
+        .action-buttons {
+            justify-content: center;
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+    /* Share Modal Styles */
+.share-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.7);
+    justify-content: center;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.share-modal.show {
+    display: flex;
+    opacity: 1;
+}
+
+.share-modal-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 15px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+}
+
+.share-modal h3 {
+    margin-top: 0;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    color: var(--text-color);
+}
+
+.share-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.share-option {
+    padding: 0.75rem;
+    border-radius: 8px;
+    border: none;
+    background: #f5f7fa;
+    color: var(--text-color);
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--transition);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.share-option:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.share-option i {
+    font-size: 1.2rem;
+}
+
+.close-share-modal {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #aaa;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.close-share-modal:hover {
+    color: var(--primary-color);
+    transform: rotate(90deg);
+}
+
+@media (max-width: 480px) {
+    .share-options {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
+
+{% block contenttt1 %}
+<div class="product-detail-container">
+    <div class="product-header">
+        <div class="product-gallery">
+            <!-- Main Image -->
+            <div class="main-image-container">
+                <img id="mainImage"
+                     src="{{ product.main_image.url }}"
+                     data-original="{{ product.main_image.url }}"
+                     alt="{{ product.name }}"
+                     loading="lazy">
+            </div>
+
+            <!-- Thumbnails with hover zoom -->
+            <div class="thumbnail-container">
+                <div class="thumbnail-wrapper">
+                    <img src="{{ product.main_image.url }}"
+                         class="thumbnail-image active"
+                         data-full="{{ product.main_image.url }}"
+                         alt="Main image"
+                         loading="lazy">
+                    <div class="thumbnail-zoom">
+                        <img src="{{ product.main_image.url }}" alt="Zoomed Main image" loading="lazy">
+                    </div>
+                </div>
+
+                {% for image in product.images.all %}
+                <div class="thumbnail-wrapper">
+                    <img src="{{ image.image.url }}"
+                         class="thumbnail-image"
+                         data-full="{{ image.image.url }}"
+                         alt="Additional image {{ forloop.counter }}"
+                         loading="lazy">
+                    <div class="thumbnail-zoom">
+                        <img src="{{ image.image.url }}" alt="Zoomed image {{ forloop.counter }}" loading="lazy">
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Product Info -->
+        <div class="product-info">
+            <h1 class="product-title">{{ product.name }}</h1>
+
+            <div class="product-meta">
+                <span class="badge category-badge"><i class="fas fa-tag"></i> {{ product.get_category_display }}</span>
+                <span class="badge stock-badge"><i class="fas fa-box-open"></i>
+                    {% if product.total_quantity > 0 %}
+                        In Stock 
+                    {% else %}
+                        Out of Stock
+                    {% endif %}
+                </span>
+                {% if product.discount_price %}
+                <span class="badge" style="background-color: rgba(255,51,102,0.1); color: #ff3366;">
+                    <i class="fas fa-percentage"></i> {{ product.get_discount_percentage }}% OFF
+                </span>
+                {% endif %}
+            </div>
+            {% if product.video %}
+            <div class="video-section">
+                <video autoplay muted loop controls poster="{{ product.main_image.url }}" loading="lazy">
+                    <source src="{{ product.video.url }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+            {% endif %}
+            {% if product.details %}
+            <div class="product-details">
+                <h3><i class="fas fa-info-circle"></i> Details</h3>
+                <p>{{ product.details|linebreaks }}</p>
+            </div>
+            {% endif %}
+            <div class="action-buttons">
+                <a href="{% url 'All_products' %}" class="btn">
+                    <i class="fas fa-arrow-left"></i> Back to Products
+                </a>
+                {% if product.total_quantity > 0 %}
+                <button class="btn" id="addToCartBtn">
+                    <i class="fas fa-cart-plus"></i> On Stoke
+                </button>
+                {% else %}
+                <button class="btn" style="background: #999; cursor: not-allowed;" disabled>
+                    <i class="fas fa-times-circle"></i> Out of Stock
+                </button>
+                {% endif %}
+            <!-- In your HTML (keep the button as is) -->
+            <button class="btn" style="background: linear-gradient(135deg, #25d366, #128C7E);" id="shareBtn">
+                <i class="fas fa-share-alt"></i> Share
+            </button>
+
+            <!-- Add this modal for share options (place it near your other modal) -->
+            <div class="share-modal" id="shareModal">
+                <div class="share-modal-content">
+                    <span class="close-share-modal" id="closeShareModal">&times;</span>
+                    <h3>Share this product</h3>
+                    <div class="share-options">
+                        <button class="share-option" data-platform="whatsapp">
+                            <i class="fab fa-whatsapp"></i> WhatsApp
+                        </button>
+                        <button class="share-option" data-platform="facebook">
+                            <i class="fab fa-facebook"></i> Facebook
+                        </button>
+                        <button class="share-option" data-platform="twitter">
+                            <i class="fab fa-twitter"></i> Twitter
+                        </button>
+                        <button class="share-option" data-platform="linkedin">
+                            <i class="fab fa-linkedin"></i> LinkedIn
+                        </button>
+                        <button class="share-option" data-platform="email">
+                            <i class="fas fa-envelope"></i> Email
+                        </button>
+                        <button class="share-option" data-platform="copy">
+                            <i class="fas fa-copy"></i> Copy Link
+                        </button>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal -->
+<div class="image-modal" id="imageModal">
+    <span class="close-modal" id="closeModal">&times;</span>
+    <div class="image-modal-content">
+        <img src="" id="zoomedImage">
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Share functionality with modal - Enhanced Version
+class ProductSharer {
+    constructor() {
+        this.shareBtn = document.getElementById('shareBtn');
+        this.shareModal = document.getElementById('shareModal');
+        this.closeShareModal = document.getElementById('closeShareModal');
+        this.shareOptions = document.querySelectorAll('.share-option');
+        this.currentUrl = window.location.href;
+        this.productName = '{{ product.name }}';
+        this.shareText = `Check out ${this.productName} at ${this.currentUrl}`;
+        
+        if (this.shareBtn) {
+            this.init();
+        }
+    }
+    
+    init() {
+        this.setupEventListeners();
+    }
+    
+    setupEventListeners() {
+        // Share button click
+        this.shareBtn.addEventListener('click', () => this.handleShareClick());
+        
+        // Close modal events
+        this.closeShareModal.addEventListener('click', () => this.closeModal());
+        this.shareModal.addEventListener('click', (e) => {
+            if (e.target === this.shareModal) this.closeModal();
+        });
+        
+        // Share option clicks
+        this.shareOptions.forEach(option => {
+            option.addEventListener('click', () => this.handleShareOption(option));
+        });
+        
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (this.shareModal.classList.contains('show') && e.key === 'Escape') {
+                this.closeModal();
+            }
+        });
+    }
+    
+    async handleShareClick() {
+        try {
+            // Try Web Share API first (mobile devices)
+            if (navigator.share) {
+                await navigator.share({
+                    title: this.productName,
+                    text: 'Check out this amazing product!',
+                    url: this.currentUrl
+                });
+            } else {
+                // Fallback to custom modal
+                this.openModal();
+            }
+        } catch (err) {
+            if (err.name !== 'AbortError') { // User canceled share
+                console.error('Share failed:', err);
+                this.openModal(); // Fallback to custom modal
+            }
+        }
+    }
+    
+    handleShareOption(option) {
+        const platform = option.getAttribute('data-platform');
+        
+        try {
+            switch(platform) {
+                case 'whatsapp':
+                    this.shareOnWhatsApp();
+                    break;
+                case 'facebook':
+                    this.shareOnFacebook();
+                    break;
+                case 'twitter':
+                    this.shareOnTwitter();
+                    break;
+                case 'linkedin':
+                    this.shareOnLinkedIn();
+                    break;
+                case 'email':
+                    this.shareViaEmail();
+                    break;
+                case 'copy':
+                    this.copyToClipboard(option);
+                    return; // Don't close modal yet for copy
+                default:
+                    console.warn('Unknown platform:', platform);
+            }
+            
+            this.closeModal();
+        } catch (err) {
+            console.error(`Failed to share on ${platform}:`, err);
+            alert(`Failed to share on ${platform}. Please try again.`);
+        }
+    }
+    
+    shareOnWhatsApp() {
+        const url = `https://wa.me/?text=${encodeURIComponent(this.shareText)}`;
+        window.open(url, '_blank');
+    }
+    
+    shareOnFacebook() {
+        const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(this.currentUrl)}`;
+        window.open(url, '_blank', 'width=600,height=400');
+    }
+    
+    shareOnTwitter() {
+        const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(this.shareText)}`;
+        window.open(url, '_blank', 'width=600,height=400');
+    }
+    
+    shareOnLinkedIn() {
+        const url = `https://www.linkedin.com/shareArticle?mini=true&url=${encodeURIComponent(this.currentUrl)}&title=${encodeURIComponent(this.productName)}`;
+        window.open(url, '_blank', 'width=600,height=400');
+    }
+    
+    shareViaEmail() {
+        const url = `mailto:?subject=${encodeURIComponent(this.productName)}&body=${encodeURIComponent(this.shareText)}`;
+        window.location.href = url;
+    }
+    
+    async copyToClipboard(button) {
+        try {
+            await navigator.clipboard.writeText(this.currentUrl);
+            
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+            
+            setTimeout(() => {
+                button.innerHTML = originalText;
+                this.closeModal();
+            }, 1500);
+            
+            // Optional: Show a more subtle notification instead of alert
+            this.showToast('Link copied to clipboard!');
+        } catch (err) {
+            console.error('Copy failed:', err);
+            
+            // Fallback for older browsers
+            if (this.copyWithExecCommand()) {
+                this.showToast('Link copied to clipboard!');
+            } else {
+                alert('Could not copy link. Please try again or copy manually.');
+            }
+        }
+    }
+    
+    copyWithExecCommand() {
+        try {
+            const textarea = document.createElement('textarea');
+            textarea.value = this.currentUrl;
+            textarea.style.position = 'fixed'; // Avoid scrolling to bottom
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            const success = document.execCommand('copy');
+            document.body.removeChild(textarea);
+            return success;
+        } catch (err) {
+            return false;
+        }
+    }
+    
+    showToast(message) {
+        // Simple toast notification implementation
+        const toast = document.createElement('div');
+        toast.textContent = message;
+        toast.style.position = 'fixed';
+        toast.style.bottom = '20px';
+        toast.style.left = '50%';
+        toast.style.transform = 'translateX(-50%)';
+        toast.style.backgroundColor = 'rgba(0,0,0,0.7)';
+        toast.style.color = 'white';
+        toast.style.padding = '10px 20px';
+        toast.style.borderRadius = '5px';
+        toast.style.zIndex = '10000';
+        toast.style.transition = 'opacity 0.3s';
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            setTimeout(() => toast.remove(), 300);
+        }, 2000);
+    }
+    
+    openModal() {
+        this.shareModal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    closeModal() {
+        this.shareModal.classList.remove('show');
+        document.body.style.overflow = 'auto';
+    }
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    // Initialize product sharer
+    if (document.getElementById('shareBtn')) {
+        new ProductSharer();
+    }
+    
+    // Rest of your DOMContentLoaded code...
+    const mainImage = document.getElementById('mainImage');
+    const thumbnails = document.querySelectorAll('.thumbnail-image');
+    const imageModal = document.getElementById('imageModal');
+    const zoomedImage = document.getElementById('zoomedImage');
+    const closeModal = document.getElementById('closeModal');
+    const addToCartBtn = document.getElementById('addToCartBtn');
+
+    // Image gallery functionality
+    if (thumbnails.length) {
+        thumbnails.forEach(thumbnail => {
+            thumbnail.addEventListener('click', function() {
+                const fullImage = this.getAttribute('data-full');
+                mainImage.src = fullImage;
+                mainImage.dataset.original = fullImage;
+
+                // Update active state
+                document.querySelectorAll('.thumbnail-image').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    }
+
+    // Image modal functionality
+    if (mainImage && imageModal) {
+        mainImage.addEventListener('click', () => {
+            zoomedImage.src = mainImage.dataset.original;
+            imageModal.classList.add('show');
+            document.body.style.overflow = 'hidden';
+        });
+
+        closeModal.addEventListener('click', () => {
+            imageModal.classList.remove('show');
+            document.body.style.overflow = 'auto';
+        });
+
+        imageModal.addEventListener('click', (e) => {
+            if (e.target === imageModal) {
+                imageModal.classList.remove('show');
+                document.body.style.overflow = 'auto';
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (imageModal.classList.contains('show') && e.key === 'Escape') {
+                imageModal.classList.remove('show');
+                document.body.style.overflow = 'auto';
+            }
+        });
+    }
+
+    // Add to cart functionality
+    if (addToCartBtn) {
+        addToCartBtn.addEventListener('click', function() {
+            // Visual feedback
+            const originalHTML = this.innerHTML;
+            const originalBg = this.style.background;
+            
+            this.innerHTML = '<i class="fas fa-check"></i> Added to Cart';
+            this.style.background = 'linear-gradient(135deg, #4CAF50, #2E7D32)';
+            
+            // Here you would typically make an AJAX call to add to cart
+            // this.addToCartViaAjax();
+            
+            // Reset after 2 seconds
+            setTimeout(() => {
+                this.innerHTML = originalHTML;
+                this.style.background = originalBg;
+            }, 2000);
+        });
+    }
+});
+
+// Optional: AJAX add to cart function
+/*
+function addToCartViaAjax() {
+    fetch('/add-to-cart/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            product_id: {{ product.id }},
+            quantity: 1
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update cart count in UI
+            updateCartCount(data.cart_count);
+        } else {
+            showError(data.message || 'Failed to add to cart');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showError('Network error. Please try again.');
+    });
+}
+*/
+</script>
+{% endblock %}
