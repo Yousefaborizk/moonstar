@@ -17,14 +17,14 @@ class HomeView(ListView):
 
 # Dashboard
 def All_Dash(request):
-    return render(request,"sales\products\All_products.html",{'product':Product.objects.all()})
+    return render(request,"sales/products/All_products.html",{'product':Product.objects.all()})
 
 def Moving_dashboard(request):
-    return render(request,"sales\products\moving_head.html",{'product':Product.objects.all()})
+    return render(request,"sales/products/moving_head.html",{'product':Product.objects.all()})
 
 
 def Led_par_dashboard(request):
-    return render(request,"sales\products\led_par.html",{'product':Product.objects.all()})
+    return render(request,"sales/products/led_par.html",{'product':Product.objects.all()})
 
 def Smoke_dashboard(request):
     return render(request,"sales\products\smoke.html",{'product':Product.objects.all()})
